@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2047
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "org.Lakepointe.RFIDWedge.CA", "org.Lakepointe.RFIDWedge\org.Lakepointe.RFIDWedge.CA.csproj", "{8E66C33D-E7E6-4409-8EA1-68D1E09A0475}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8E66C33D-E7E6-4409-8EA1-68D1E09A0475}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E66C33D-E7E6-4409-8EA1-68D1E09A0475}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E66C33D-E7E6-4409-8EA1-68D1E09A0475}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E66C33D-E7E6-4409-8EA1-68D1E09A0475}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2D8833B8-9B1A-4EBE-8E05-11797F51E35E}
+	EndGlobalSection
+EndGlobal
