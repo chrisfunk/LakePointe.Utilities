@@ -11,12 +11,14 @@ namespace org.Lakepointe.RFIDWedge.CA
 {
     class RFIDReader
     {
+        #region Fields
         private static RFIDReader reader = null;
         private ReadMode mode = ReadMode.DEFAULT;
         private SerialPort serialPort = null;
+        #endregion
 
-
-        public bool EnableLogging { get; set; } = true;
+        #region Properties
+        public bool EnableLogging { get; set; } = false;
 
         public ReadMode Mode
         {
@@ -31,10 +33,20 @@ namespace org.Lakepointe.RFIDWedge.CA
         }
 
         public string PortAddress { get; set; }
+        #endregion
 
+        #region Constructor
         private RFIDReader() { }
+        #endregion
 
-
+        #region Public Methods
+        public void Close()
+        {
+            if ( serialPort != null && serialPort.IsOpen )
+            {
+                serialPort.Close();
+            }
+        }
 
         public void Configure()
         {
@@ -60,44 +72,32 @@ namespace org.Lakepointe.RFIDWedge.CA
             serialPort.StopBits = StopBits.One;
 
             serialPort.DataReceived += SerialPort_DataReceived;
-
         }
 
-        private void SerialPort_DataReceived( object sender, SerialDataReceivedEventArgs e )
+        public bool Open()
         {
-            var port = ( SerialPort ) sender;
-
-            string rawdata = port.ReadLine();
-            string processedData = null;
-
-            if ( mode == ReadMode.AWID || mode == ReadMode.DEFAULT )
+            try
             {
-                processedData = ConvertToAWID( rawdata );
+                if ( serialPort == null )
+                {
+                    throw new Exception( "Port Not Configured" );
+                }
 
+                serialPort.Open();
+
+                return serialPort.IsOpen;
             }
-            else
+            catch ( Exception )
             {
-                processedData = rawdata;
+                return false;
             }
-
-
-            if ( EnableLogging )
-            {
-                string.Format( "Raw Data: {0} Processed Data: {1}", rawdata, processedData );
-            }
-
-            // escape special characters
-            processedData = Regex.Replace( processedData, "[+^%~()]", "{$0}" );
-
-            // append enter
-            processedData = processedData + "~";
-
-            SendKeys.SendWait( processedData );
         }
 
+        #endregion
+
+        #region Private Methods
         private string ConvertToAWID( string data )
         {
-
             data = data.Substring( 0, 10 );
             var byteArr = Enumerable.Range( 0, data.Length )
                      .Where( x => x % 2 == 0 )
@@ -143,7 +143,6 @@ namespace org.Lakepointe.RFIDWedge.CA
                 {
                     idBitArrayPrep.Add( idLeftToRight[b] );
                 }
-
             }
 
             BitArray facBitArray = new BitArray( facBitArrayPrep.ToArray() );
@@ -166,45 +165,51 @@ namespace org.Lakepointe.RFIDWedge.CA
 
 
             //i can FINALLY return the card value!
-            return string.Concat( facCode.ToString(), "^", id.ToString() );
-        }
-
-
-
-        public void Close()
-        {
-            if ( serialPort != null && serialPort.IsOpen )
-            {
-                serialPort.Close();
-            }
-        }
-
-        public bool Open()
-        {
-
-            try
-            {
-                if ( serialPort == null )
-                {
-                    throw new Exception( "Port Not Configured" );
-                }
-
-                serialPort.Open();
-
-                return serialPort.IsOpen;
-            }
-            catch ( Exception )
-            {
-                return false;
-            }
-
-
+            return string.Concat( facCode.ToString(), ":", id.ToString() );
         }
 
         private string ReadSetting( string key )
         {
             return ConfigurationManager.AppSettings.Get( key );
         }
+
+        private void SerialPort_DataReceived( object sender, SerialDataReceivedEventArgs e )
+        {
+            var port = ( SerialPort ) sender;
+
+            string rawdata = port.ReadLine();
+            string processedData = null;
+
+            if ( mode == ReadMode.AWID || mode == ReadMode.DEFAULT )
+            {
+                processedData = ConvertToAWID( rawdata );
+
+            }
+            else
+            {
+                processedData = rawdata;
+            }
+
+            if ( EnableLogging )
+            {
+                string logData = string.Format( "Raw Data: {0} Processed Data: {1}", rawdata.Replace( "\r", "" ), processedData );
+                var originalColor = Console.ForegroundColor;
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine( logData );
+                Console.ForegroundColor = originalColor;
+            }
+
+            // escape special characters
+            processedData = Regex.Replace( processedData, "[+^%~()]", "{$0}" );
+
+            // append enter
+            processedData = processedData + "~";
+
+            SendKeys.SendWait( processedData );
+        }
+        #endregion
+
+        #region Static Methods
         static void Main( string[] args )
         {
             reader = new RFIDReader();
@@ -236,11 +241,25 @@ namespace org.Lakepointe.RFIDWedge.CA
 
             if ( status )
             {
-                Console.WriteLine( "RFID Reader Started" );
-                Console.ReadKey();
+                bool isCloseRequested = false;
 
                 AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
 
+                while ( !isCloseRequested )
+                {
+                    Console.Clear();
+                    Console.WriteLine( "RFID Reader Active" );
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine( "Press 'C' to close." );
+                    Console.ResetColor();
+
+                    var key = Console.ReadKey();
+
+                    if ( key.KeyChar == 'C' || key.KeyChar == 'c' )
+                    {
+                        isCloseRequested = true;
+                    }
+                }
             }
             else
             {
@@ -249,13 +268,7 @@ namespace org.Lakepointe.RFIDWedge.CA
                 Console.WriteLine( "Press any key to close" );
                 Console.ReadKey();
             }
-
-
-
-
-
         }
-
 
         private static void CurrentDomain_ProcessExit( object sender, EventArgs e )
         {
@@ -264,5 +277,6 @@ namespace org.Lakepointe.RFIDWedge.CA
                 reader.Close();
             }
         }
+        #endregion
     }
 }
